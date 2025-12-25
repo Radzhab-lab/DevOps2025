@@ -145,7 +145,7 @@ jobs:
           name: deployment-log-radzhab
           path: deployment_radzhab.txt
 
-  # ============================
+# ============================
   # STAGE 8 — CLEANUP
   # ============================
   cleanup:
