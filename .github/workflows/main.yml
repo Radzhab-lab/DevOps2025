@@ -1,16 +1,34 @@
-name: Test Self-Hosted Runner
+name: Extended CI Pipeline — Radzhab (Windows)
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
-  build:
-    runs-on: self-hosted
+  setup-environment:
+    runs-on: ubuntu-latest  # ← ИЗМЕНИТЬ С self-hosted!
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Print message
-        run: echo "Hello from self-hosted runner!"
+      - name: Prepare environment
+        run: |
+          echo "Setting up environment..."
+          echo "Installing dependencies..."
+          echo "Environment prepared by Radzhab"
+
+  build-app:
+    runs-on: ubuntu-latest  # ← ИЗМЕНИТЬ
+    needs: setup-environment
+    steps:
+      - name: Pull latest code
+        uses: actions/checkout@v4
+
+      - name: Compile application
+        run: |
+          echo "Compiling the application..."
+          echo "Compilation finished by Radzhab"
+
+  # ... остальные jobs (все с runs-on: ubuntu-latest)
