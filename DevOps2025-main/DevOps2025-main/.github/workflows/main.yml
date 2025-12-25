@@ -1,16 +1,30 @@
-name: Test Self-Hosted Runner
+name: Test GitHub Runner
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
-  build:
-    runs-on: self-hosted
+  test-runner:
+    runs-on: ubuntu-latest  # Или windows-latest, macos-latest
+    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Print message
-        run: echo "Hello from self-hosted runner!"
+      - name: Print system info
+        run: |
+          echo "Hello from GitHub-hosted runner!"
+          echo "Runner OS: $RUNNER_OS"
+          echo "Runner Arch: $RUNNER_ARCH"
+          uname -a
+          lsb_release -a 2>/dev/null || ver 2>/dev/null || systeminfo 2>/dev/null || echo "OS info not available"
+          
+      - name: Test basic commands
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Git version: $(git --version)"
+          echo "Node version: $(node --version 2>/dev/null || echo 'Node not installed')"
+          echo "Python version: $(python --version 2>/dev/null || echo 'Python not installed')"

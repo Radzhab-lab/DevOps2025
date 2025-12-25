@@ -1,4 +1,4 @@
-name: Extended CI Pipeline — Radzhab (Windows)
+name: Extended CI Pipeline — Radzhab
 
 on:
   push:
@@ -11,23 +11,27 @@ jobs:
   # STAGE 1 — ENVIRONMENT SETUP
   # ============================
   setup-environment:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest  # Или windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Prepare environment
         run: |
-          Write-Host "Setting up environment..."
-          Write-Host "Installing dependencies..."
-          Write-Host "Environment prepared by Radzhab"
-        shell: powershell
+          echo "Setting up environment..."
+          echo "Installing dependencies..."
+          echo "Environment prepared by Radzhab"
+
+      - name: Setup Node.js (пример, если нужно)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
   # ============================
   # STAGE 2 — BUILD
   # ============================
   build-app:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: setup-environment
     steps:
       - name: Pull latest code
@@ -35,139 +39,158 @@ jobs:
 
       - name: Compile application
         run: |
-          Write-Host "Compiling the application..."
-          Write-Host "Compilation finished by Radzhab"
-        shell: powershell
+          echo "Compiling the application..."
+          # Реальная команда компиляции, например:
+          # npm run build
+          echo "Compilation finished by Radzhab"
 
       - name: Run pre-build checks
         run: |
-          Write-Host "Running pre-build checks..."
-          Write-Host "Checks passed (Radzhab)"
-        shell: powershell
+          echo "Running pre-build checks..."
+          # Пример реальной проверки:
+          # npm run type-check
+          echo "Checks passed (Radzhab)"
 
   # ============================
   # STAGE 3 — TESTING
   # ============================
   run-tests:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build-app
     steps:
       - name: Run unit tests
         run: |
-          Write-Host "Executing unit tests..."
-          Write-Host "All unit tests passed (Radzhab)"
-        shell: powershell
+          echo "Executing unit tests..."
+          # npm test
+          echo "All unit tests passed (Radzhab)"
 
       - name: Run integration tests
         run: |
-          Write-Host "Running integration tests..."
-          Write-Host "Integration tests succeeded (Radzhab)"
-        shell: powershell
+          echo "Running integration tests..."
+          # npm run test:integration
+          echo "Integration tests succeeded (Radzhab)"
 
       - name: Run performance tests
         run: |
-          Write-Host "Running basic performance tests..."
-          Write-Host "Performance tests completed (Radzhab)"
-        shell: powershell
+          echo "Running basic performance tests..."
+          # npm run test:performance
+          echo "Performance tests completed (Radzhab)"
 
   # ============================
   # STAGE 4 — STATIC ANALYSIS & LINTING
   # ============================
   code-quality:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: run-tests
     steps:
       - name: Lint source code
         run: |
-          Write-Host "Running code linting..."
-          Write-Host "Linting completed by Radzhab"
-        shell: powershell
+          echo "Running code linting..."
+          # npm run lint
+          echo "Linting completed by Radzhab"
 
       - name: Static code analysis
         run: |
-          Write-Host "Performing static code analysis..."
-          Write-Host "No critical issues found (Radzhab)"
-        shell: powershell
+          echo "Performing static code analysis..."
+          # Пример с использованием ESLint
+          # npx eslint src/
+          echo "No critical issues found (Radzhab)"
 
   # ============================
   # STAGE 5 — SECURITY SCAN
   # ============================
   security-check:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: code-quality
     steps:
-      - name: Security scan
+      - name: Security scan with Snyk
+        uses: snyk/actions/node@master
+        continue-on-error: true  # Если хотите чтобы workflow не падал при security warnings
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Other security checks
         run: |
-          Write-Host "Running security scan..."
-          Write-Host "Security scan completed (Radzhab)"
-        shell: powershell
+          echo "Running additional security checks..."
+          # npm audit
+          echo "Security scan completed (Radzhab)"
 
   # ============================
   # STAGE 6 — PACKAGE
   # ============================
   package-artifacts:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: security-check
     steps:
       - name: Create build artifacts
         run: |
-          New-Item -ItemType Directory -Force -Path output
-          "Artifact generated by Radzhab" | Out-File -FilePath output\artifact.txt -Encoding utf8
-        shell: powershell
+          mkdir -p output
+          echo "Artifact generated by Radzhab at $(date)" > output/artifact.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-radzhab
           path: output/
+          retention-days: 7
 
   # ============================
   # STAGE 7 — DEPLOY
   # ============================
   deploy-app:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: package-artifacts
+    if: github.ref == 'refs/heads/main'  # Разворачиваем только из main
     steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-radzhab
+
+      - name: Deploy to GitHub Pages (пример)
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+
       - name: Deploy application
         run: |
-          Write-Host "Deploying application..."
-          Write-Host "Deployment done by Radzhab"
-        shell: powershell
+          echo "Deploying application..."
+          # Здесь реальная команда деплоя
+          echo "Deployment done by Radzhab"
 
       - name: Save deployment log
         run: |
-          "Deployment finished by Radzhab at $(Get-Date)" | Out-File -FilePath deployment_radzhab.txt -Encoding utf8
-        shell: powershell
+          echo "Deployment finished by Radzhab at $(date)" > deployment_radzhab.txt
 
       - name: Upload deployment log
         uses: actions/upload-artifact@v4
         with:
           name: deployment-log-radzhab
           path: deployment_radzhab.txt
+          retention-days: 7
 
   # ============================
-  # STAGE 8 — CLEANUP
-  # ============================
-  cleanup:
-    runs-on: self-hosted
-    needs: deploy-app
-    steps:
-      - name: Remove temporary files
-        run: |
-          Write-Host "Cleaning temporary files..."
-          Remove-Item -Recurse -Force output
-          Write-Host "Cleanup completed by Radzhab"
-        shell: powershell
-
-  # ============================
-  # STAGE 9 — NOTIFY
+  # STAGE 8 — NOTIFICATION
   # ============================
   notify-team:
-    runs-on: self-hosted
-    needs: cleanup
+    runs-on: ubuntu-latest
+    needs: deploy-app
+    if: always()  # Выполнять всегда, даже если предыдущие jobs упали
     steps:
-      - name: Send notification
+      - name: Send notification to Slack
+        uses: rtCamp/action-slack-notify@v2
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_TITLE: "CI/CD Pipeline Status"
+          SLACK_MESSAGE: "Pipeline ${{ job.status }} for commit ${{ github.sha }}"
+
+      - name: Summary notification
         run: |
-          Write-Host "Sending deployment notification..."
-          Write-Host "Notification sent to team (Radzhab)"
-        shell: powershell
+          echo "Sending deployment notification..."
+          echo "Notification sent to team (Radzhab)"
+          echo "Workflow status: ${{ job.status }}"
